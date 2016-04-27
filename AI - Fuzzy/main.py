@@ -114,10 +114,12 @@ class Fuzzy:
 fuzzy = Fuzzy()
 trueval = 0
 
+print 'Progress \t|\t Accuracy'
+
 for i in data:
   fuz = fuzzy.fuzzication(data[i])
   infer = fuzzy.inference(fuz)
   defuz = fuzzy.deffuzzication(infer)
   trueval += fuzzy.cekAccurate(defuz, i, trueval)
 
-print 'Result = ', '%.2f%%' % (float(trueval) / float(len(data)) * 100)
+print 'Final Accuracy = ', '%.2f%%' % (float(trueval) / float(len(data)) * 100)
