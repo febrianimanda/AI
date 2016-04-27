@@ -101,7 +101,13 @@ class Fuzzy:
   def cekAccurate(self, defuzVal, index, acc):
     result = 1 if data[index]['UNS'] == defuzVal else 0
     acc += result
-    print index, 'T' if data[index]['UNS'] == defuzVal else 'F', '\t','%.2f%%' % (0 if acc == 0 else float(acc) / float(len(data)) * 100)
+    if index < 10:
+      zero = '00'   
+    elif index < 100:
+      zero = '0'
+    else:
+      zero = ''
+    print '%s%s : %s' % (zero, index, 'T' if data[index]['UNS'] == defuzVal else 'F'), '\t|','\t%.2f%%' % (0 if acc == 0 else float(acc) / float(len(data)) * 100)
     # print data[index]['UNS'], defuzVal, '=', data[index]['UNS'] == defuzVal, '\t result',0 if acc == 0 else float(acc) / float(len(data)) * 100,'%'
     return result
 
