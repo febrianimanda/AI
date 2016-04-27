@@ -1,4 +1,5 @@
 import csv
+import itertools
 
 data = {}
 rules = []
@@ -27,30 +28,6 @@ class Trapesium:
     self.c = c
     self.d = d
 
-  def setA(self, a):
-    self.a = a
-
-  def getA(self):
-    return self.a
-
-  def setB(self, b):
-    self.b = b
-
-  def getB(self):
-    return self.b
-
-  def setC(self, c):
-    self.c = c
-
-  def getC(self):
-    return self.c
-
-  def setD(self, d):
-    self.d = d
-
-  def getD(self):
-    return self.d
-
   def calcValue(self, value):
     if value >= self.b and value <= self.c:
       return 1
@@ -69,7 +46,7 @@ class Fuzzy:
 
   def getRulesResult(self, valArr):
     for i in rules:
-      if valArr[0:3] == i[0:3]:
+      if valArr == i[0:3]:
         return i[3]
 
   def fuzzication(self, dictValue):
@@ -83,55 +60,58 @@ class Fuzzy:
       if h > 0: var[str(key)]['h'] = h
     return var
 
-  def inference(self, f):
-    # print f.items()
+  def collecting(self, f):
+    coll = []
+    coll.append(f['STG'].keys())
+    coll.append(f['SCG'].keys())
+    coll.append(f['PEG'].keys())
+    return coll
+
+  def inference(self, fuzVal):
+    coll = [b for b in itertools.product(*self.collecting(fuzVal))]
+    lencombi = len(coll)
     comb = {}
-    length_dict = {key: len(value) for key, value in f.items()}
-    mlen = max(length_dict.items(), key=lambda x: x[1])
-    
-    # print mlen 
-    # for i in range(mlen[1]):
-    #   comb.append([])
-    
-    comb[0].append(f['STG'].keys()[0])
-    comb[0].append(f['SCG'].keys()[0])
-    comb[0].append(f['PEG'].keys()[0])
+    result = []
+    for i in range(lencombi):
+      member = [x for x in coll[i]]
+      value = [fuzVal['STG'][member[0]], fuzVal['SCG'][member[1]], fuzVal['PEG'][member[2]]]
+      comb[i] = {
+        'min' : min(value),
+        'rulesres': self.getRulesResult(member)
+      }
+    return comb
 
-    minval = {}
-    for i in f[mlen[0]].keys():
-      minval[i] = 99
-      for j in f:
-        if f[j].has_key(i):
-          if f[j][i] < minval[i]:
-            minval[i] = f[j][i]
+  def deffuzzication(self, infVal):
+    sugeno = {'vl': 0, 'l': 1, 'm': 2, 'h': 3}
+    result = {}
+    for i in range(len(infVal)):
+      infVal[i]['sugeno'] = sugeno[infVal[i]['rulesres']] * infVal[i]['min']
+    result = {}
+    divider = {}
+    for i in range(len(infVal)):
+      if infVal[i]['rulesres'] in result.keys():
+        result[infVal[i]['rulesres']] = max(infVal[i]['sugeno'], result[infVal[i]['rulesres']])
+        divider[infVal[i]['rulesres']] = max(infVal[i]['min'], divider[infVal[i]['rulesres']])
+      else:
+        result[infVal[i]['rulesres']] = infVal[i]['sugeno']
+        divider[infVal[i]['rulesres']] = infVal[i]['min']
+    total = round(sum(result.values()) / sum(divider.values()))
+    return 'very_low' if total == 0 else 'Low' if total == 1 else 'Middle' if total == 2 else 'High'
 
-    print minval
+  def cekAccurate(self, defuzVal, index, acc):
+    result = 1 if data[index]['UNS'] == defuzVal else 0
+    acc += result
+    print index, 'T' if data[index]['UNS'] == defuzVal else 'F', '\t','%.2f%%' % (0 if acc == 0 else float(acc) / float(len(data)) * 100)
+    # print data[index]['UNS'], defuzVal, '=', data[index]['UNS'] == defuzVal, '\t result',0 if acc == 0 else float(acc) / float(len(data)) * 100,'%'
+    return result
 
-    if mlen[1] > 1:
-      lenstg = len(f['STG'])
-      lenscg = len(f['SCG'])
-      lenpeg = len(f['PEG'])
+fuzzy = Fuzzy()
+trueval = 0
 
-      comb[1].append(f['STG'].keys()[1 if lenstg > 1 else 0])
-      comb[1].append(f['SCG'].keys()[1 if lenscg > 1 else 0])
-      comb[1].append(f['PEG'].keys()[1 if lenpeg > 1 else 0])
+for i in data:
+  fuz = fuzzy.fuzzication(data[i])
+  infer = fuzzy.inference(fuz)
+  defuz = fuzzy.deffuzzication(infer)
+  trueval += fuzzy.cekAccurate(defuz, i, trueval)
 
-    print comb
-    res = []
-    for i in range(mlen[1]):
-      res.append(self.getRulesResult(comb[i]))
-
-    print res
-
-
-      
-  def deffuzzication(self):
-    return True
-
-f = Fuzzy()
-a = f.fuzzication(data[4])
-print a
-f.inference(a)
-# print a['PEG'].keys()
-
-# print min(a.items(), key=lambda x: x[1])
+print 'Result = ', '%.2f%%' % (float(trueval) / float(len(data)) * 100)
