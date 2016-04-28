@@ -90,8 +90,9 @@ class Fuzzy:
     divider = {}
     for i in range(len(infVal)):
       if infVal[i]['rulesres'] in result.keys():
-        result[infVal[i]['rulesres']] = max(infVal[i]['sugeno'], result[infVal[i]['rulesres']])
-        divider[infVal[i]['rulesres']] = max(infVal[i]['min'], divider[infVal[i]['rulesres']])
+        if result[infVal[i]['rulesres']] < infVal[i]['sugeno']:
+          result[infVal[i]['rulesres']] = infVal[i]['sugeno']
+          divider[infVal[i]['rulesres']] = infVal[i]['min']
       else:
         result[infVal[i]['rulesres']] = infVal[i]['sugeno']
         divider[infVal[i]['rulesres']] = infVal[i]['min']
