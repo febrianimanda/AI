@@ -3,12 +3,22 @@ import numpy as np
 
 data = {}
 target = []
-with open('occupancy.csv', 'rb') as csvfile:
+with open('occupancy_normal.csv', 'rb') as csvfile:
   reader = csv.DictReader(csvfile, delimiter=',')
   i = 0
   for row in reader:
     data[i] = [float(row['Temperature']), float(row['Humidity']), float(row['Light']), float(row['CO2'])]
     target.append(int(row['Occupancy']))
+    i += 1
+
+data_testing = {}
+target_testing = []
+with open('testing_occupancy_normal.csv', 'rb') as csvfile:
+  reader = csv.DictReader(csvfile, delimiter=',')
+  i = 0
+  for row in reader:
+    data_testing[i] = [float(row['Temperature']), float(row['Humidity']), float(row['Light']), float(row['CO2'])]
+    target_testing.append(int(row['Occupancy']))
     i += 1
 
 class Neuron:
@@ -42,15 +52,15 @@ class JST:
 		self.target = target
 		self.epoch = epoch
 		self.MSE = []
-		self.w1 = np.random.uniform(-.1,.1,self.jNeuron*4)
-		self.w2 = np.random.uniform(-.1,.1,self.jNeuron)
+		self.w1 = np.random.uniform(0,1,self.jNeuron*4)
+		self.w2 = np.random.uniform(0,1,self.jNeuron)
 
-	def running(self):
+	def learning(self):
 		ee = 0
+		print "learning in progress ..."
 		while ee < self.epoch:
 			MSEepoch = 0
 			for index in range(self.lendata):
-				print ee, index
 				#Forwarding
 				##Hidden Layer
 				nHidden = []
@@ -92,14 +102,30 @@ class JST:
 
 			ee += 1
 			self.MSE.append(MSEepoch/self.lendata)
+			print ee, MSEepoch/self.lendata
+		print self.w1, self.w2
+		print "Learning Success"
 
-print np.random.uniform(-1,1,10,5)
-# jst = JST(data, target, 100)
-# jst.running()
-# for i in jst.MSE:
-# 	print i
-# print len(data)
-# print jst.MSEepoch
-# a = [1,2,3,4]
-# b = [2,3,4,5]
-# c = [x + y for x, y in zip(a, b)]
+	def testing(self, data_testing, target_testing):
+		print 'Progress \t|\t Accuracy'
+		counter = 0
+		for index in range(len(data_testing)):
+			nHidden = []
+			for i in range(self.jNeuron):
+				a,b = i * self.jNeuron, (i+1) * self.jNeuron
+				neuron = Neuron(data_testing[index], self.w1[a:b])
+				nHidden.append(neuron.aktivasi())
+			
+			neuron = Neuron(nHidden, self.w2)
+			nOutput = round(neuron.aktivasi())
+
+			checking = nOutput == target_testing[index]
+			if nOutput == target_testing[index]:
+				counter += 1
+			print '%s : %s' % (index, 'T' if checking else 'F'), '\t|','\t%.2f%%' % (0 if counter == 0 else float(counter) / float(len(data_testing)) * 100)
+		print "Final Accuracy :", '%.2f%%' % (float(counter) / float(len(data_testing)) * 100)
+
+
+jst = JST(data, target, 100)
+jst.learning()
+jst.testing(data_testing, target_testing)
